@@ -1,0 +1,799 @@
+<Window x:Class="SevenDaysVehicleEditor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SevenDaysVehicleEditor"
+        mc:Ignorable="d"
+        Title="7 Days Vehicle Editor"
+        Height="760"
+        Width="1240"
+        MinHeight="640"
+        MinWidth="1080"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <SolidColorBrush x:Key="AppFogBrush" Color="#FF4A514E" />
+        <SolidColorBrush x:Key="AppShadowBrush" Color="#FF171B1A" />
+        <SolidColorBrush x:Key="PanelBrush" Color="#CC1E2322" />
+        <SolidColorBrush x:Key="PanelSoftBrush" Color="#B3282E2C" />
+        <SolidColorBrush x:Key="PanelEdgeBrush" Color="#667B817B" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#FF8F2523" />
+        <SolidColorBrush x:Key="AccentHoverBrush" Color="#FFB12B28" />
+        <SolidColorBrush x:Key="AccentSoftBrush" Color="#995B1716" />
+        <SolidColorBrush x:Key="PrimaryTextBrush" Color="#FFF2EEE4" />
+        <SolidColorBrush x:Key="SecondaryTextBrush" Color="#FFC0BBB0" />
+        <SolidColorBrush x:Key="InputBrush" Color="#AA111615" />
+        <SolidColorBrush x:Key="GridBrush" Color="#AA202525" />
+
+        <Style TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PanelEdgeBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{StaticResource InputBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PanelEdgeBrush}" />
+            <Setter Property="CaretBrush" Value="{StaticResource PrimaryTextBrush}" />
+        </Style>
+
+        <Style TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+        </Style>
+
+        <Style TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+        </Style>
+
+        <Style TargetType="Expander">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{StaticResource PanelSoftBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PanelEdgeBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Expander">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10">
+                            <DockPanel>
+                                <ToggleButton x:Name="HeaderSite"
+                                              DockPanel.Dock="Top"
+                                              Content="{TemplateBinding Header}"
+                                              FocusVisualStyle="{x:Null}"
+                                              IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ToggleButton.Template>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border x:Name="HeaderBorder"
+                                                    Background="{StaticResource AccentSoftBrush}"
+                                                    BorderThickness="0"
+                                                    Padding="14,10">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="18" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock x:Name="ArrowGlyph"
+                                                               Grid.Column="0"
+                                                               VerticalAlignment="Center"
+                                                               HorizontalAlignment="Center"
+                                                               FontSize="14"
+                                                               Foreground="{StaticResource PrimaryTextBrush}"
+                                                               Text="▸" />
+                                                    <ContentPresenter Grid.Column="1"
+                                                                      Margin="8,0,0,0"
+                                                                      VerticalAlignment="Center"
+                                                                      RecognizesAccessKey="True"
+                                                                      Content="{TemplateBinding Content}" />
+                                                </Grid>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="HeaderBorder" Property="Background" Value="{StaticResource AccentHoverBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="HeaderBorder" Property="Background" Value="{StaticResource AccentBrush}" />
+                                                    <Setter TargetName="ArrowGlyph" Property="Text" Value="▾" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </ToggleButton.Template>
+                                </ToggleButton>
+                                <ContentPresenter x:Name="ExpandSite"
+                                                  Margin="0"
+                                                  Visibility="Collapsed" />
+                            </DockPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="ExpandSite" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ListBox">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{StaticResource InputBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PanelEdgeBrush}" />
+        </Style>
+
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Padding" Value="10,7" />
+            <Setter Property="Margin" Value="0,0,0,3" />
+            <Setter Property="Background" Value="#33111615" />
+            <Setter Property="BorderBrush" Value="#00000000" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="ItemBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#554D1817" />
+                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{StaticResource PanelEdgeBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource AccentBrush}" />
+                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{StaticResource AccentHoverBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+
+        <Style TargetType="TreeView">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{StaticResource InputBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PanelEdgeBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="6" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TreeView">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ScrollViewer Focusable="False"
+                                          HorizontalScrollBarVisibility="Auto"
+                                          VerticalScrollBarVisibility="Auto"
+                                          Padding="{TemplateBinding Padding}">
+                                <ItemsPresenter />
+                            </ScrollViewer>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TreeViewItem">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+            <Setter Property="IsExpanded" Value="False" />
+            <Setter Property="Focusable" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TreeViewItem">
+                        <StackPanel>
+                            <Border x:Name="HeaderBorder"
+                                    Background="#33111615"
+                                    BorderBrush="{StaticResource PanelEdgeBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="8,6">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="18" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <ToggleButton x:Name="ExpanderToggle"
+                                                  Grid.Column="0"
+                                                  Width="14"
+                                                  Height="14"
+                                                  Margin="0,0,6,0"
+                                                  VerticalAlignment="Center"
+                                                  FocusVisualStyle="{x:Null}"
+                                                  IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                                        <ToggleButton.Template>
+                                            <ControlTemplate TargetType="ToggleButton">
+                                                <TextBlock x:Name="ArrowGlyph"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{StaticResource PrimaryTextBrush}"
+                                                           FontSize="11"
+                                                           Text="▸" />
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsChecked" Value="True">
+                                                        <Setter TargetName="ArrowGlyph" Property="Text" Value="▾" />
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </ToggleButton.Template>
+                                    </ToggleButton>
+
+                                    <ContentPresenter Grid.Column="1"
+                                                      ContentSource="Header"
+                                                      VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+
+                            <Border x:Name="ChildrenBorder"
+                                    Margin="16,4,0,0"
+                                    Padding="0"
+                                    Background="Transparent">
+                                <ItemsPresenter x:Name="ItemsHost" Visibility="Collapsed" />
+                            </Border>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="HasItems" Value="False">
+                                <Setter TargetName="ExpanderToggle" Property="Visibility" Value="Hidden" />
+                            </Trigger>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="ItemsHost" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="HeaderBorder" Property="Background" Value="{StaticResource AccentBrush}" />
+                                <Setter TargetName="HeaderBorder" Property="BorderBrush" Value="{StaticResource AccentHoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="HeaderBorder" Property="Background" Value="#554D1817" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                    <Condition Property="IsSelected" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="HeaderBorder" Property="Background" Value="{StaticResource AccentHoverBrush}" />
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="18,8" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="TabBorder"
+                                Background="{StaticResource PanelSoftBrush}"
+                                BorderBrush="{StaticResource PanelEdgeBrush}"
+                                BorderThickness="1,1,1,0"
+                                CornerRadius="10,10,0,0"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              ContentSource="Header" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource AccentBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource AccentHoverBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="DataGrid">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{StaticResource GridBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PanelEdgeBrush}" />
+            <Setter Property="RowBackground" Value="#66121615" />
+            <Setter Property="AlternatingRowBackground" Value="#88404643" />
+            <Setter Property="GridLinesVisibility" Value="Horizontal" />
+            <Setter Property="HorizontalGridLinesBrush" Value="#447B817B" />
+            <Setter Property="VerticalGridLinesBrush" Value="#00000000" />
+            <Setter Property="HeadersVisibility" Value="Column" />
+            <Setter Property="ColumnHeaderStyle">
+                <Setter.Value>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+                        <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
+                        <Setter Property="BorderBrush" Value="{StaticResource PanelEdgeBrush}" />
+                        <Setter Property="FontWeight" Value="Bold" />
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+
+    <Grid Background="{StaticResource AppFogBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="14" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="{StaticResource AppShadowBrush}" />
+
+        <Border Grid.Row="1"
+                Margin="16"
+                Padding="18"
+                Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource PanelEdgeBrush}"
+                BorderThickness="1"
+                CornerRadius="16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                    <TextBlock FontSize="26"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource PrimaryTextBrush}"
+                               Text="7 Days To Die Vehicle Editor" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource SecondaryTextBrush}"
+                               TextWrapping="Wrap"
+                               Text="A safer editor for vehicles.xml with automatic backups, grouped tuning fields, and support for any vehicle entries found in the selected config file." />
+                </StackPanel>
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox Grid.Column="0"
+                             Margin="0,0,12,0"
+                             Padding="10,8"
+                             IsReadOnly="True"
+                             Text="{Binding CurrentFilePath}" />
+
+                    <Button Grid.Column="1"
+                            Margin="0,0,8,0"
+                            Padding="14,8"
+                            Click="BrowseFileClick"
+                            Content="{Binding BrowseButtonText}" />
+
+                    <Button Grid.Column="2"
+                            Margin="0,0,8,0"
+                            Padding="14,8"
+                            Click="ReloadFileClick"
+                            Content="{Binding ReloadButtonText}" />
+
+                    <Button Grid.Column="3"
+                            Margin="0,0,8,0"
+                            Padding="14,8"
+                            IsEnabled="{Binding HasActiveFile}"
+                            Click="SaveFileClick"
+                            Content="Save" />
+
+                    <Button Grid.Column="4"
+                            Margin="0,0,8,0"
+                            Padding="14,8"
+                            IsEnabled="{Binding HasActiveFile}"
+                            Click="CreateBackupClick"
+                            Content="Create Backup" />
+
+                    <Button Grid.Column="5"
+                            Padding="14,8"
+                            IsEnabled="{Binding CanRestoreBackup}"
+                            Click="RestoreBackupClick"
+                            Content="Restore Backup" />
+                </Grid>
+
+                <TextBlock Grid.Row="2"
+                           Margin="0,12,0,0"
+                           Foreground="{StaticResource SecondaryTextBrush}"
+                           Text="{Binding StatusMessage}" />
+
+                <Border Grid.Row="3"
+                        Margin="0,14,0,0"
+                        Padding="12"
+                        Background="{StaticResource PanelSoftBrush}"
+                        BorderBrush="{StaticResource PanelEdgeBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                    <WrapPanel VerticalAlignment="Center">
+                        <TextBlock Margin="0,0,10,0"
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource PrimaryTextBrush}"
+                                   Text="Performance Multiplier" />
+
+                        <TextBox Width="88"
+                                 Margin="0,0,12,0"
+                                 Padding="8,5"
+                                 VerticalContentAlignment="Center"
+                                 Text="{Binding MultiplierText, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <RadioButton Margin="0,0,10,0"
+                                     VerticalAlignment="Center"
+                                     GroupName="MultiplierScope"
+                                     IsChecked="{Binding ApplyToSelectedVehicle}"
+                                     Content="Selected Vehicle" />
+
+                        <RadioButton Margin="0,0,16,0"
+                                     VerticalAlignment="Center"
+                                     GroupName="MultiplierScope"
+                                     IsChecked="{Binding ApplyToAllVehicles}"
+                                     Content="All Vehicles" />
+
+                        <CheckBox Margin="0,0,12,0"
+                                  VerticalAlignment="Center"
+                                  IsChecked="{Binding AffectMotorTorque}"
+                                  Content="Motor Torque / Turbo" />
+
+                        <CheckBox Margin="0,0,12,0"
+                                  VerticalAlignment="Center"
+                                  IsChecked="{Binding AffectMaxVelocity}"
+                                  Content="Max Velocity / Turbo" />
+
+                        <CheckBox Margin="0,0,12,0"
+                                  VerticalAlignment="Center"
+                                  IsChecked="{Binding AffectBrakeTorque}"
+                                  Content="Brake Torque" />
+
+                        <Button Padding="14,6"
+                                Margin="0,0,12,0"
+                                Click="ApplyPerformanceMultiplierClick"
+                                Content="Apply" />
+
+                        <TextBlock MaxWidth="520"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource SecondaryTextBrush}"
+                                   Text="{Binding MultiplierHelpText}" />
+                    </WrapPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <TabControl Grid.Row="2"
+                    Margin="16,0,16,16"
+                    SelectedIndex="{Binding SelectedTabIndex}">
+            <TabItem Header="Vanilla">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="300" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0"
+                            Padding="14"
+                            Background="{StaticResource PanelBrush}"
+                            BorderBrush="{StaticResource PanelEdgeBrush}"
+                            BorderThickness="1"
+                            CornerRadius="16">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top"
+                                       Margin="0,0,0,10"
+                                       FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource PrimaryTextBrush}"
+                                       Text="Vehicles" />
+
+                            <ListBox ItemsSource="{Binding VanillaVehicles}"
+                                     SelectedItem="{Binding SelectedVanillaVehicle}"
+                                     DisplayMemberPath="Name" />
+                        </DockPanel>
+                    </Border>
+
+                    <Border Grid.Column="2"
+                            Padding="18"
+                            Background="{StaticResource PanelBrush}"
+                            BorderBrush="{StaticResource PanelEdgeBrush}"
+                            BorderThickness="1"
+                            CornerRadius="16">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0"
+                                        Margin="0,0,0,12">
+                                <TextBlock FontSize="24"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource PrimaryTextBrush}"
+                                           Text="{Binding CurrentVehicle.Name, TargetNullValue=No Vehicle Selected}" />
+                                <TextBlock Margin="0,6,0,0"
+                                           Foreground="{StaticResource SecondaryTextBrush}"
+                                           TextWrapping="Wrap"
+                                           Text="{Binding CurrentVehicleSummary}" />
+                            </StackPanel>
+
+                            <ScrollViewer Grid.Row="1"
+                                          VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <Expander IsExpanded="True" Header="Performance">
+                                        <DataGrid ItemsSource="{Binding PerformanceProperties}"
+                                                  AutoGenerateColumns="False"
+                                                  CanUserAddRows="False"
+                                                  CanUserDeleteRows="False"
+                                                  HeadersVisibility="Column"
+                                                  RowHeaderWidth="0">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Width="220" Binding="{Binding DisplayName}" Header="Setting" IsReadOnly="True" />
+                                                <DataGridTextColumn Width="*" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Header="Value" />
+                                                <DataGridTextColumn Width="260" Binding="{Binding Description}" Header="Notes" IsReadOnly="True" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </Expander>
+
+                                    <Expander IsExpanded="True" Header="Handling">
+                                        <DataGrid ItemsSource="{Binding HandlingProperties}"
+                                                  AutoGenerateColumns="False"
+                                                  CanUserAddRows="False"
+                                                  CanUserDeleteRows="False"
+                                                  HeadersVisibility="Column"
+                                                  RowHeaderWidth="0">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Width="220" Binding="{Binding DisplayName}" Header="Setting" IsReadOnly="True" />
+                                                <DataGridTextColumn Width="*" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Header="Value" />
+                                                <DataGridTextColumn Width="260" Binding="{Binding Description}" Header="Notes" IsReadOnly="True" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </Expander>
+
+                                    <Expander IsExpanded="True" Header="Fuel And Utility">
+                                        <DataGrid ItemsSource="{Binding FuelProperties}"
+                                                  AutoGenerateColumns="False"
+                                                  CanUserAddRows="False"
+                                                  CanUserDeleteRows="False"
+                                                  HeadersVisibility="Column"
+                                                  RowHeaderWidth="0">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Width="220" Binding="{Binding DisplayName}" Header="Setting" IsReadOnly="True" />
+                                                <DataGridTextColumn Width="*" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Header="Value" />
+                                                <DataGridTextColumn Width="260" Binding="{Binding Description}" Header="Notes" IsReadOnly="True" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </Expander>
+
+                                    <Expander IsExpanded="True" Header="Extras">
+                                        <DataGrid ItemsSource="{Binding ExtraProperties}"
+                                                  AutoGenerateColumns="False"
+                                                  CanUserAddRows="False"
+                                                  CanUserDeleteRows="False"
+                                                  HeadersVisibility="Column"
+                                                  RowHeaderWidth="0">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Width="220" Binding="{Binding DisplayName}" Header="Setting" IsReadOnly="True" />
+                                                <DataGridTextColumn Width="*" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Header="Value" />
+                                                <DataGridTextColumn Width="260" Binding="{Binding Description}" Header="Notes" IsReadOnly="True" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </Expander>
+
+                                    <Expander Header="Advanced Raw Properties">
+                                        <DataGrid ItemsSource="{Binding AdvancedProperties}"
+                                                  AutoGenerateColumns="False"
+                                                  CanUserAddRows="False"
+                                                  CanUserDeleteRows="False"
+                                                  HeadersVisibility="Column"
+                                                  RowHeaderWidth="0">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Width="160" Binding="{Binding Section}" Header="Section" IsReadOnly="True" />
+                                                <DataGridTextColumn Width="220" Binding="{Binding PropertyName}" Header="Property" IsReadOnly="True" />
+                                                <DataGridTextColumn Width="*" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Header="Value" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </Expander>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Modded">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="320" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0"
+                            Padding="14"
+                            Background="{StaticResource PanelBrush}"
+                            BorderBrush="{StaticResource PanelEdgeBrush}"
+                            BorderThickness="1"
+                            CornerRadius="16">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top"
+                                       Margin="0,0,0,6"
+                                       FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource PrimaryTextBrush}"
+                                       Text="Vehicle Mods" />
+                            <TextBlock DockPanel.Dock="Top"
+                                       Margin="0,0,0,10"
+                                       Foreground="{StaticResource SecondaryTextBrush}"
+                                       Text="{Binding ModSummary}" />
+
+                            <TreeView ItemsSource="{Binding ModFolders}"
+                                      PreviewMouseLeftButtonDown="ModTreePreviewMouseLeftButtonDown"
+                                      SelectedItemChanged="ModTreeSelectionChanged">
+                                <TreeView.Resources>
+                                    <HierarchicalDataTemplate DataType="{x:Type local:ModFolderConfig}"
+                                                              ItemsSource="{Binding Vehicles}">
+                                        <StackPanel>
+                                            <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                                            <TextBlock Foreground="{StaticResource SecondaryTextBrush}"
+                                                       FontSize="11"
+                                                       Text="{Binding VehicleCountLabel}" />
+                                        </StackPanel>
+                                    </HierarchicalDataTemplate>
+
+                                    <DataTemplate DataType="{x:Type local:ModVehicleNode}">
+                                        <Border Background="#44111615"
+                                                BorderBrush="{StaticResource PanelEdgeBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="6"
+                                                Padding="8,5">
+                                            <TextBlock Text="{Binding Name}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </TreeView.Resources>
+                            </TreeView>
+                        </DockPanel>
+                    </Border>
+
+                    <Border Grid.Column="2"
+                            Padding="18"
+                            Background="{StaticResource PanelBrush}"
+                            BorderBrush="{StaticResource PanelEdgeBrush}"
+                            BorderThickness="1"
+                            CornerRadius="16">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0"
+                                        Margin="0,0,0,12">
+                                <TextBlock FontSize="24"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource PrimaryTextBrush}"
+                                           Text="{Binding CurrentVehicle.Name, TargetNullValue=No Vehicle Selected}" />
+                                <TextBlock Margin="0,6,0,0"
+                                           Foreground="{StaticResource SecondaryTextBrush}"
+                                           TextWrapping="Wrap"
+                                           Text="{Binding CurrentVehicleSummary}" />
+                            </StackPanel>
+
+                            <ScrollViewer Grid.Row="1"
+                                          VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <Expander IsExpanded="True" Header="Performance">
+                                        <DataGrid ItemsSource="{Binding PerformanceProperties}"
+                                                  AutoGenerateColumns="False"
+                                                  CanUserAddRows="False"
+                                                  CanUserDeleteRows="False"
+                                                  HeadersVisibility="Column"
+                                                  RowHeaderWidth="0">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Width="220" Binding="{Binding DisplayName}" Header="Setting" IsReadOnly="True" />
+                                                <DataGridTextColumn Width="*" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Header="Value" />
+                                                <DataGridTextColumn Width="260" Binding="{Binding Description}" Header="Notes" IsReadOnly="True" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </Expander>
+
+                                    <Expander IsExpanded="True" Header="Handling">
+                                        <DataGrid ItemsSource="{Binding HandlingProperties}"
+                                                  AutoGenerateColumns="False"
+                                                  CanUserAddRows="False"
+                                                  CanUserDeleteRows="False"
+                                                  HeadersVisibility="Column"
+                                                  RowHeaderWidth="0">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Width="220" Binding="{Binding DisplayName}" Header="Setting" IsReadOnly="True" />
+                                                <DataGridTextColumn Width="*" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Header="Value" />
+                                                <DataGridTextColumn Width="260" Binding="{Binding Description}" Header="Notes" IsReadOnly="True" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </Expander>
+
+                                    <Expander IsExpanded="True" Header="Fuel And Utility">
+                                        <DataGrid ItemsSource="{Binding FuelProperties}"
+                                                  AutoGenerateColumns="False"
+                                                  CanUserAddRows="False"
+                                                  CanUserDeleteRows="False"
+                                                  HeadersVisibility="Column"
+                                                  RowHeaderWidth="0">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Width="220" Binding="{Binding DisplayName}" Header="Setting" IsReadOnly="True" />
+                                                <DataGridTextColumn Width="*" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Header="Value" />
+                                                <DataGridTextColumn Width="260" Binding="{Binding Description}" Header="Notes" IsReadOnly="True" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </Expander>
+
+                                    <Expander IsExpanded="True" Header="Extras">
+                                        <DataGrid ItemsSource="{Binding ExtraProperties}"
+                                                  AutoGenerateColumns="False"
+                                                  CanUserAddRows="False"
+                                                  CanUserDeleteRows="False"
+                                                  HeadersVisibility="Column"
+                                                  RowHeaderWidth="0">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Width="220" Binding="{Binding DisplayName}" Header="Setting" IsReadOnly="True" />
+                                                <DataGridTextColumn Width="*" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Header="Value" />
+                                                <DataGridTextColumn Width="260" Binding="{Binding Description}" Header="Notes" IsReadOnly="True" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </Expander>
+
+                                    <Expander Header="Advanced Raw Properties">
+                                        <DataGrid ItemsSource="{Binding AdvancedProperties}"
+                                                  AutoGenerateColumns="False"
+                                                  CanUserAddRows="False"
+                                                  CanUserDeleteRows="False"
+                                                  HeadersVisibility="Column"
+                                                  RowHeaderWidth="0">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Width="160" Binding="{Binding Section}" Header="Section" IsReadOnly="True" />
+                                                <DataGridTextColumn Width="220" Binding="{Binding PropertyName}" Header="Property" IsReadOnly="True" />
+                                                <DataGridTextColumn Width="*" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Header="Value" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </Expander>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <Border Grid.Row="3"
+                Margin="16,0,16,16"
+                Padding="14"
+                Background="{StaticResource AccentSoftBrush}"
+                BorderBrush="{StaticResource PanelEdgeBrush}"
+                BorderThickness="1"
+                CornerRadius="12">
+            <TextBlock Foreground="{StaticResource PrimaryTextBrush}"
+                       TextWrapping="Wrap"
+                       Text="Tip: vanilla reads directly from Data\Config\vehicles.xml. Modded mode scans the game's Mods folder, checks each mod's Config\vehicles.xml, and groups discovered vehicles underneath the mod that owns them." />
+        </Border>
+    </Grid>
+</Window>
