@@ -237,7 +237,7 @@ Use the helper script:
 
 This publishes the app into:
 
-[release/publish](/C:/Users/Evendyce/Documents/Codex/2026-05-01/hey-mr-codex-i-have-a/SevenDaysVehicleEditor/release/publish)
+release/publish
 
 ### Manual
 
