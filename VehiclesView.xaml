@@ -212,7 +212,10 @@
                             <ScrollViewer Grid.Row="1"
                                           VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
-                                    <Expander IsExpanded="True" Header="Performance">
+                                    <Expander IsExpanded="True"
+                                              Header="Performance"
+                                              local:ExpanderAssist.ActionButtonContent="Edit"
+                                              local:ExpanderAssist.ActionButtonCommand="{Binding RelativeSource={RelativeSource AncestorType=local:VehiclesView}, Path=OpenPerformanceEditorCommand}">
                                         <DataGrid ItemsSource="{Binding PerformanceProperties}"
                                                   AutoGenerateColumns="False"
                                                   CanUserAddRows="False"
@@ -227,7 +230,10 @@
                                         </DataGrid>
                                     </Expander>
 
-                                    <Expander IsExpanded="True" Header="Handling">
+                                    <Expander IsExpanded="True"
+                                              Header="Handling"
+                                              local:ExpanderAssist.ActionButtonContent="Edit"
+                                              local:ExpanderAssist.ActionButtonCommand="{Binding RelativeSource={RelativeSource AncestorType=local:VehiclesView}, Path=OpenHandlingEditorCommand}">
                                         <DataGrid ItemsSource="{Binding HandlingProperties}"
                                                   AutoGenerateColumns="False"
                                                   CanUserAddRows="False"
@@ -242,7 +248,10 @@
                                         </DataGrid>
                                     </Expander>
 
-                                    <Expander IsExpanded="True" Header="Fuel And Utility">
+                                    <Expander IsExpanded="True"
+                                              Header="Fuel And Utility"
+                                              local:ExpanderAssist.ActionButtonContent="Edit"
+                                              local:ExpanderAssist.ActionButtonCommand="{Binding RelativeSource={RelativeSource AncestorType=local:VehiclesView}, Path=OpenFuelEditorCommand}">
                                         <DataGrid ItemsSource="{Binding FuelProperties}"
                                                   AutoGenerateColumns="False"
                                                   CanUserAddRows="False"
@@ -257,7 +266,10 @@
                                         </DataGrid>
                                     </Expander>
 
-                                    <Expander IsExpanded="True" Header="Extras">
+                                    <Expander IsExpanded="True"
+                                              Header="Extras"
+                                              local:ExpanderAssist.ActionButtonContent="Edit"
+                                              local:ExpanderAssist.ActionButtonCommand="{Binding RelativeSource={RelativeSource AncestorType=local:VehiclesView}, Path=OpenExtrasEditorCommand}">
                                         <DataGrid ItemsSource="{Binding ExtraProperties}"
                                                   AutoGenerateColumns="False"
                                                   CanUserAddRows="False"
@@ -374,7 +386,10 @@
                             <ScrollViewer Grid.Row="1"
                                           VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
-                                    <Expander IsExpanded="True" Header="Performance">
+                                    <Expander IsExpanded="True"
+                                              Header="Performance"
+                                              local:ExpanderAssist.ActionButtonContent="Edit"
+                                              local:ExpanderAssist.ActionButtonCommand="{Binding RelativeSource={RelativeSource AncestorType=local:VehiclesView}, Path=OpenPerformanceEditorCommand}">
                                         <DataGrid ItemsSource="{Binding PerformanceProperties}"
                                                   AutoGenerateColumns="False"
                                                   CanUserAddRows="False"
@@ -389,7 +404,10 @@
                                         </DataGrid>
                                     </Expander>
 
-                                    <Expander IsExpanded="True" Header="Handling">
+                                    <Expander IsExpanded="True"
+                                              Header="Handling"
+                                              local:ExpanderAssist.ActionButtonContent="Edit"
+                                              local:ExpanderAssist.ActionButtonCommand="{Binding RelativeSource={RelativeSource AncestorType=local:VehiclesView}, Path=OpenHandlingEditorCommand}">
                                         <DataGrid ItemsSource="{Binding HandlingProperties}"
                                                   AutoGenerateColumns="False"
                                                   CanUserAddRows="False"
@@ -404,7 +422,10 @@
                                         </DataGrid>
                                     </Expander>
 
-                                    <Expander IsExpanded="True" Header="Fuel And Utility">
+                                    <Expander IsExpanded="True"
+                                              Header="Fuel And Utility"
+                                              local:ExpanderAssist.ActionButtonContent="Edit"
+                                              local:ExpanderAssist.ActionButtonCommand="{Binding RelativeSource={RelativeSource AncestorType=local:VehiclesView}, Path=OpenFuelEditorCommand}">
                                         <DataGrid ItemsSource="{Binding FuelProperties}"
                                                   AutoGenerateColumns="False"
                                                   CanUserAddRows="False"
@@ -419,7 +440,10 @@
                                         </DataGrid>
                                     </Expander>
 
-                                    <Expander IsExpanded="True" Header="Extras">
+                                    <Expander IsExpanded="True"
+                                              Header="Extras"
+                                              local:ExpanderAssist.ActionButtonContent="Edit"
+                                              local:ExpanderAssist.ActionButtonCommand="{Binding RelativeSource={RelativeSource AncestorType=local:VehiclesView}, Path=OpenExtrasEditorCommand}">
                                         <DataGrid ItemsSource="{Binding ExtraProperties}"
                                                   AutoGenerateColumns="False"
                                                   CanUserAddRows="False"

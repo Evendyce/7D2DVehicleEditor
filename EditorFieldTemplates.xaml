@@ -1,0 +1,28 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:SevenDaysVehicleEditor"
+                    xmlns:controls="clr-namespace:SevenDaysVehicleEditor.Controls">
+    <DataTemplate DataType="{x:Type local:ScalarEditorFieldViewModel}">
+        <controls:ScalarEditorFieldControl />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type local:NumericEditorFieldViewModel}">
+        <controls:NumericEditorFieldControl />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type local:BooleanEditorFieldViewModel}">
+        <controls:BooleanEditorFieldControl />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type local:FourValueEditorFieldViewModel}">
+        <controls:FourValueEditorFieldControl />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type local:MultiNumericEditorFieldViewModel}">
+        <controls:MultiNumericEditorFieldControl />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type local:ReadOnlyInfoFieldViewModel}">
+        <controls:ReadOnlyInfoFieldControl />
+    </DataTemplate>
+</ResourceDictionary>

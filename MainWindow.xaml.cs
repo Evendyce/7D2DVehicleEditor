@@ -1,6 +1,7 @@
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -11,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Interop;
 using System.Xml.Linq;
 using System.Runtime.InteropServices;
+using SevenDaysVehicleEditor.Controls;
 
 namespace SevenDaysVehicleEditor;
 
@@ -19,6 +21,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private const string MotorTorquePropertyName = "motorTorque_turbo";
     private const string MaxVelocityPropertyName = "velocityMax_turbo";
     private const string BrakeTorquePropertyName = "brakeTorque";
+    private const string TiltDampeningPropertyName = "tiltDampening";
+    private const string FoodDrainPropertyName = "foodDrain";
+    private const string HornSoundPropertyName = "hornSound";
 
     private static readonly IReadOnlyList<PropertyDefinition> ProgressionLevelDefinitions =
     [
@@ -92,6 +97,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         new("Extras", "hornSound", null, "Horn Sound", "Horn sound event name."),
         new("Extras", "bright", "headlight", "Headlight Brightness", "Brightness used by headlight section.")
     ];
+
+    private static readonly IReadOnlyDictionary<string, NumericFieldRule> NumericFieldRules =
+        new Dictionary<string, NumericFieldRule>(StringComparer.OrdinalIgnoreCase)
+        {
+            [MotorTorquePropertyName] = new(1m, 0, InferFromValue: false),
+            [MaxVelocityPropertyName] = new(0.5m, 1, InferFromValue: false),
+            [BrakeTorquePropertyName] = new(1m, 0, InferFromValue: false),
+            [TiltDampeningPropertyName] = new(0.01m, 2, InferFromValue: false)
+        };
 
     private VehicleConfigDocument? _vanillaDocument;
     private ProgressionConfigDocument? _progressionDocument;
@@ -836,6 +850,86 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         StatusMessage = $"Applied multiplier {multiplier} to {scopeText}. Updated {updatedValues} value(s).";
     }
 
+    internal void OpenPerformanceSectionEditor()
+    {
+        if (CurrentVehicle is null || PerformanceProperties.Count == 0)
+        {
+            MessageBox.Show(this, "Select a vehicle with editable performance properties first.", "No Performance Properties", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var fields = BuildPerformanceEditorFields();
+        var window = new SectionEditorWindow(
+            $"{CurrentVehicle.Name} Performance",
+            "This popup is a prototype for section-focused editing. Tuple-style fields are split into labeled parts and rejoined back into the underlying XML-backed value automatically.",
+            fields)
+        {
+            Owner = this
+        };
+
+        window.ShowDialog();
+    }
+
+    internal void OpenHandlingSectionEditor()
+    {
+        if (CurrentVehicle is null || HandlingProperties.Count == 0)
+        {
+            MessageBox.Show(this, "Select a vehicle with editable handling properties first.", "No Handling Properties", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var fields = BuildHandlingEditorFields();
+        var window = new SectionEditorWindow(
+            $"{CurrentVehicle.Name} Handling",
+            "Use the stepper controls for predictable tuning changes. Sensitive decimal fields preserve finer steps automatically, and specific high-sensitivity fields can enforce stricter step rules.",
+            fields)
+        {
+            Owner = this
+        };
+
+        window.ShowDialog();
+    }
+
+    internal void OpenFuelSectionEditor()
+    {
+        if (CurrentVehicle is null || FuelProperties.Count == 0)
+        {
+            MessageBox.Show(this, "Select a vehicle with editable fuel and utility properties first.", "No Fuel Properties", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var fields = BuildFuelEditorFields();
+        var window = new SectionEditorWindow(
+            $"{CurrentVehicle.Name} Fuel And Utility",
+            "Fuel-related values can vary a lot between vehicles. Multi-value fuel fields preserve the precision already used in the XML so small drains and sensitive utility values are easier to tune safely.",
+            fields)
+        {
+            Owner = this
+        };
+
+        window.ShowDialog();
+    }
+
+    internal void OpenExtrasSectionEditor()
+    {
+        if (CurrentVehicle is null || ExtraProperties.Count == 0)
+        {
+            MessageBox.Show(this, "Select a vehicle with editable extras properties first.", "No Extras Properties", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var fields = BuildExtrasEditorFields();
+        var window = new SectionEditorWindow(
+            $"{CurrentVehicle.Name} Extras",
+            "Extras mixes safe tuning values with engine/resource references. Numeric tuning fields stay editable here, while sound-event style references remain visible but read-only in the safe editor.",
+            fields)
+        {
+            Owner = this
+        };
+
+        window.ShowDialog();
+    }
+
     internal void ModTreeSelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
         switch (e.NewValue)
@@ -1309,6 +1403,255 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
+    private IEnumerable<EditorFieldViewModel> BuildPerformanceEditorFields()
+    {
+        foreach (var property in PerformanceProperties)
+        {
+            if (string.Equals(property.PropertyName, MotorTorquePropertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                yield return CreateMultiNumericField(
+                    property,
+                    ["Forward", "Reverse", "Turbo Forward", "Turbo Reverse"],
+                    1m,
+                    0);
+                continue;
+            }
+
+            if (string.Equals(property.PropertyName, MaxVelocityPropertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                yield return CreateMultiNumericField(
+                    property,
+                    ["Forward", "Reverse", "Turbo Forward", "Turbo Reverse"],
+                    0.5m,
+                    1);
+                continue;
+            }
+
+            yield return CreateNumericField(property, new NumericFieldRule(1m, 0, InferFromValue: false));
+        }
+    }
+
+    private IEnumerable<EditorFieldViewModel> BuildHandlingEditorFields()
+    {
+        foreach (var property in HandlingProperties)
+        {
+            var parts = SplitCompositeParts(property.Value);
+            if (parts.Count > 1)
+            {
+                yield return CreateMultiNumericField(
+                    property,
+                    BuildGenericPartLabels(parts.Count),
+                    GetNumericRule(property).Step,
+                    GetNumericRule(property).DecimalPlaces);
+                continue;
+            }
+
+            yield return CreateNumericField(property, GetNumericRule(property));
+        }
+    }
+
+    private IEnumerable<EditorFieldViewModel> BuildFuelEditorFields()
+    {
+        foreach (var property in FuelProperties)
+        {
+            if (string.Equals(property.PropertyName, FoodDrainPropertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                yield return CreateAdaptiveMultiNumericField(property);
+                continue;
+            }
+
+            var parts = SplitCompositeParts(property.Value);
+            if (parts.Count > 1)
+            {
+                yield return CreateAdaptiveMultiNumericField(property);
+                continue;
+            }
+
+            yield return CreateNumericField(property, GetNumericRule(property));
+        }
+    }
+
+    private IEnumerable<EditorFieldViewModel> BuildExtrasEditorFields()
+    {
+        foreach (var property in ExtraProperties)
+        {
+            if (string.Equals(property.PropertyName, HornSoundPropertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                yield return new ReadOnlyInfoFieldViewModel(
+                    property.PropertyName,
+                    property.DisplayName,
+                    property.Value,
+                    "Sound event references are shown for inspection only in the safe editor.");
+                continue;
+            }
+
+            var parts = SplitCompositeParts(property.Value);
+            if (parts.Count > 1)
+            {
+                yield return CreateAdaptiveMultiNumericField(property);
+                continue;
+            }
+
+            yield return CreateNumericField(property, GetNumericRule(property));
+        }
+    }
+
+    private static NumericEditorFieldViewModel CreateNumericField(EditableProperty property, NumericFieldRule? rule = null)
+    {
+        rule ??= GetNumericRule(property);
+        var parsedValue = ParseDecimal(property.Value);
+        var field = new NumericEditorFieldViewModel(
+            property.PropertyName,
+            property.DisplayName,
+            parsedValue,
+            property.Description,
+            false,
+            rule.Step,
+            rule.DecimalPlaces);
+
+        field.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(NumericEditorFieldViewModel.Value))
+            {
+                property.Value = field.ValueText;
+            }
+        };
+
+        return field;
+    }
+
+    private static MultiNumericEditorFieldViewModel CreateMultiNumericField(
+        EditableProperty property,
+        IReadOnlyList<string> labels,
+        decimal step,
+        int decimalPlaces)
+    {
+        var field = new MultiNumericEditorFieldViewModel(
+            property.PropertyName,
+            property.DisplayName,
+            property.Value,
+            labels,
+            property.Description,
+            false,
+            step,
+            decimalPlaces);
+
+        field.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(MultiNumericEditorFieldViewModel.Value))
+            {
+                property.Value = field.Value;
+            }
+        };
+
+        return field;
+    }
+
+    private static MultiNumericEditorFieldViewModel CreateAdaptiveMultiNumericField(EditableProperty property)
+    {
+        var rawParts = SplitCompositeParts(property.Value);
+        var labels = BuildGenericPartLabels(rawParts.Count == 0 ? 2 : rawParts.Count);
+        var field = new MultiNumericEditorFieldViewModel(
+            property.PropertyName,
+            property.DisplayName,
+            property.Value,
+            labels,
+            property.Description,
+            false,
+            1m,
+            0);
+
+        for (var index = 0; index < field.Parts.Count && index < rawParts.Count; index++)
+        {
+            var decimalPlaces = InferDecimalPlaces(rawParts[index]);
+            field.Parts[index].DecimalPlaces = decimalPlaces;
+            field.Parts[index].Step = InferStepFromDecimalPlaces(decimalPlaces);
+        }
+
+        field.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(MultiNumericEditorFieldViewModel.Value))
+            {
+                property.Value = field.Value;
+            }
+        };
+
+        return field;
+    }
+
+    private static decimal ParseDecimal(string value)
+    {
+        return decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var invariantParsed)
+            ? invariantParsed
+            : decimal.TryParse(value, NumberStyles.Number, CultureInfo.CurrentCulture, out var currentCultureParsed)
+                ? currentCultureParsed
+                : 0m;
+    }
+
+    private static NumericFieldRule GetNumericRule(EditableProperty property)
+    {
+        if (NumericFieldRules.TryGetValue(property.PropertyName, out var explicitRule))
+        {
+            return explicitRule;
+        }
+
+        return InferNumericFieldRule(property.Value);
+    }
+
+    private static NumericFieldRule InferNumericFieldRule(string rawValue)
+    {
+        var parts = SplitCompositeParts(rawValue);
+        if (parts.Count == 0)
+        {
+            return new NumericFieldRule(1m, 0, InferFromValue: true);
+        }
+
+        var decimalPlaces = parts
+            .Select(InferDecimalPlaces)
+            .DefaultIfEmpty(0)
+            .Max();
+        var step = InferStepFromDecimalPlaces(decimalPlaces);
+
+        return new NumericFieldRule(step, decimalPlaces, InferFromValue: true);
+    }
+
+    private static decimal InferStepFromDecimalPlaces(int decimalPlaces)
+    {
+        return decimalPlaces switch
+        {
+            <= 0 => 1m,
+            1 => 0.1m,
+            2 => 0.01m,
+            3 => 0.001m,
+            4 => 0.0001m,
+            5 => 0.00001m,
+            _ => (decimal)Math.Pow(10, -decimalPlaces)
+        };
+    }
+
+    private static List<string> SplitCompositeParts(string rawValue) =>
+        rawValue
+            .Split(',', StringSplitOptions.TrimEntries)
+            .Where(part => !string.IsNullOrWhiteSpace(part))
+            .ToList();
+
+    private static int InferDecimalPlaces(string rawValue)
+    {
+        var trimmed = rawValue.Trim();
+        var decimalSeparatorIndex = trimmed.LastIndexOf('.');
+        if (decimalSeparatorIndex < 0 || decimalSeparatorIndex == trimmed.Length - 1)
+        {
+            return 0;
+        }
+
+        return trimmed.Length - decimalSeparatorIndex - 1;
+    }
+
+    private static IReadOnlyList<string> BuildGenericPartLabels(int count) =>
+        Enumerable.Range(1, count)
+            .Select(index => $"Value {index}")
+            .ToArray();
+
     private static string CreateBackupFile(string filePath)
     {
         var backupPath = GetBackupPath(filePath);
@@ -1565,3 +1908,5 @@ public sealed class PropertyDefinition(
         string.Equals(PropertyName, property.PropertyName, StringComparison.OrdinalIgnoreCase) &&
         string.Equals(Section ?? string.Empty, property.Section, StringComparison.OrdinalIgnoreCase);
 }
+
+public sealed record NumericFieldRule(decimal Step, int DecimalPlaces, bool InferFromValue);

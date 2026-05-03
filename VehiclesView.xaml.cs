@@ -6,9 +6,50 @@ namespace SevenDaysVehicleEditor;
 
 public partial class VehiclesView : UserControl
 {
+    public ICommand OpenPerformanceEditorCommand { get; }
+    public ICommand OpenHandlingEditorCommand { get; }
+    public ICommand OpenFuelEditorCommand { get; }
+    public ICommand OpenExtrasEditorCommand { get; }
+
     public VehiclesView()
     {
+        OpenPerformanceEditorCommand = new RelayCommand(OpenPerformanceEditor);
+        OpenHandlingEditorCommand = new RelayCommand(OpenHandlingEditor);
+        OpenFuelEditorCommand = new RelayCommand(OpenFuelEditor);
+        OpenExtrasEditorCommand = new RelayCommand(OpenExtrasEditor);
         InitializeComponent();
+    }
+
+    private void OpenPerformanceEditor()
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+        {
+            mainWindow.OpenPerformanceSectionEditor();
+        }
+    }
+
+    private void OpenHandlingEditor()
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+        {
+            mainWindow.OpenHandlingSectionEditor();
+        }
+    }
+
+    private void OpenFuelEditor()
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+        {
+            mainWindow.OpenFuelSectionEditor();
+        }
+    }
+
+    private void OpenExtrasEditor()
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+        {
+            mainWindow.OpenExtrasSectionEditor();
+        }
     }
 
     private void BrowseFileClick(object sender, RoutedEventArgs e)

@@ -1,0 +1,81 @@
+<UserControl x:Class="SevenDaysVehicleEditor.Controls.MultiNumericEditorFieldControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:local="clr-namespace:SevenDaysVehicleEditor.Controls"
+             mc:Ignorable="d"
+             d:DesignHeight="170"
+             d:DesignWidth="720">
+    <Border Margin="0,0,0,12"
+            Padding="12"
+            Background="{StaticResource PanelSoftBrush}"
+            BorderBrush="{StaticResource PanelEdgeBrush}"
+            BorderThickness="1"
+            CornerRadius="10">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <TextBlock FontWeight="SemiBold"
+                       Foreground="{StaticResource PrimaryTextBrush}"
+                       Text="{Binding Label}" />
+
+            <ItemsControl Grid.Row="1"
+                          Margin="0,10,0,0"
+                          ItemsSource="{Binding Parts}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="4" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="0,0,8,0">
+                            <TextBlock Margin="0,0,0,4"
+                                       Foreground="{StaticResource SecondaryTextBrush}"
+                                       Text="{Binding Label}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <Button Grid.Column="0"
+                                        MinWidth="30"
+                                        Margin="0,0,6,0"
+                                        Padding="0,6"
+                                        Command="{Binding DecrementCommand}"
+                                        Content="-" />
+
+                                <TextBox Grid.Column="1"
+                                         Padding="10,8"
+                                         HorizontalContentAlignment="Center"
+                                         IsReadOnly="{Binding IsReadOnly}"
+                                         PreviewTextInput="NumericInputPreviewTextInput"
+                                         Text="{Binding ValueText, UpdateSourceTrigger=LostFocus}" />
+
+                                <Button Grid.Column="2"
+                                        MinWidth="30"
+                                        Margin="6,0,0,0"
+                                        Padding="0,6"
+                                        Command="{Binding IncrementCommand}"
+                                        Content="+" />
+                            </Grid>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock Grid.Row="2"
+                       Margin="0,10,0,0"
+                       Foreground="{StaticResource SecondaryTextBrush}"
+                       TextWrapping="Wrap"
+                       Text="{Binding Description}" />
+        </Grid>
+    </Border>
+</UserControl>
