@@ -125,7 +125,7 @@ public sealed class ModVehicleNode
 
 public sealed class EditableProperty : INotifyPropertyChanged
 {
-    private readonly XElement _element;
+    private readonly XObject _target;
     private string _displayName;
     private string _description;
     private string _value;
@@ -137,7 +137,7 @@ public sealed class EditableProperty : INotifyPropertyChanged
         string displayName,
         string description,
         string value,
-        XElement element)
+        XObject target)
     {
         VehicleName = vehicleName;
         Section = section;
@@ -145,7 +145,7 @@ public sealed class EditableProperty : INotifyPropertyChanged
         _displayName = displayName;
         _description = description;
         _value = value;
-        _element = element;
+        _target = target;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -195,7 +195,15 @@ public sealed class EditableProperty : INotifyPropertyChanged
             }
 
             _value = value;
-            _element.SetAttributeValue("value", value);
+            switch (_target)
+            {
+                case XElement element:
+                    element.SetAttributeValue("value", value);
+                    break;
+                case XAttribute attribute:
+                    attribute.Value = value;
+                    break;
+            }
             OnPropertyChanged();
         }
     }

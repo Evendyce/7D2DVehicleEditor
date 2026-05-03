@@ -20,6 +20,51 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private const string MaxVelocityPropertyName = "velocityMax_turbo";
     private const string BrakeTorquePropertyName = "brakeTorque";
 
+    private static readonly IReadOnlyList<PropertyDefinition> ProgressionLevelDefinitions =
+    [
+        new("Level", "max_level", null, "Max Level", "The highest player level allowed by progression.xml."),
+        new("Level", "exp_to_level", null, "Base XP To Level", "Base XP required to complete the current level."),
+        new("Level", "experience_multiplier", null, "Experience Multiplier", "Scaling multiplier applied to XP required per level."),
+        new("Level", "skill_points_per_level", null, "Skill Points Per Level", "How many skill points the player gains each level."),
+        new("Level", "clamp_exp_cost_at_level", null, "Clamp XP Cost At Level", "Level where XP cost growth stops increasing.")
+    ];
+
+    private static readonly IReadOnlyList<PropertyDefinition> ProgressionAttributeDefaultDefinitions =
+    [
+        new("Attributes", "min_level", null, "Min Level", "Default minimum rank for attributes that do not override it."),
+        new("Attributes", "max_level", null, "Max Level", "Default maximum rank for attributes that do not override it."),
+        new("Attributes", "base_skill_point_cost", null, "Base Skill Point Cost", "Default skill point cost for attribute ranks."),
+        new("Attributes", "cost_multiplier_per_level", null, "Cost Multiplier Per Level", "Scaling multiplier applied to attribute level costs.")
+    ];
+
+    private static readonly IReadOnlyList<PropertyDefinition> ProgressionAttributeOverrideDefinitions =
+    [
+        new("Attribute", "min_level", null, "Min Level", "Overrides the minimum level for this specific attribute."),
+        new("Attribute", "max_level", null, "Max Level", "Overrides the maximum level for this specific attribute."),
+        new("Attribute", "base_skill_point_cost", null, "Base Skill Point Cost", "Overrides the base cost for this specific attribute."),
+        new("Attribute", "hidden", null, "Hidden", "Controls whether this attribute is hidden from normal progression presentation.")
+    ];
+
+    private static readonly IReadOnlyList<PropertyDefinition> ProgressionSkillDefaultDefinitions =
+    [
+        new("Skills", "min_level", null, "Min Level", "Top-level minimum level for the skills section."),
+        new("Skills", "max_level", null, "Max Level", "Top-level maximum level for the skills section.")
+    ];
+
+    private static readonly IReadOnlyList<PropertyDefinition> ProgressionCraftingSkillDefaultDefinitions =
+    [
+        new("Crafting Skills", "complete_sound", null, "Complete Sound", "Sound event used when a crafting skill set completes.")
+    ];
+
+    private static readonly IReadOnlyList<PropertyDefinition> ProgressionPerkDefaultDefinitions =
+    [
+        new("Perks", "min_level", null, "Min Level", "Top-level minimum rank for perks that do not override it."),
+        new("Perks", "max_level", null, "Max Level", "Top-level maximum rank for perks that do not override it."),
+        new("Perks", "base_skill_point_cost", null, "Base Skill Point Cost", "Default base perk point cost."),
+        new("Perks", "cost_multiplier_per_level", null, "Cost Multiplier Per Level", "Default perk cost multiplier per rank."),
+        new("Perks", "max_level_ratio_to_parent", null, "Max Level Ratio To Parent", "Parent-to-child level ratio used by perk progression.")
+    ];
+
     private static readonly IReadOnlyList<PropertyDefinition> SafeDefinitions =
     [
         new("Performance", MotorTorquePropertyName, null, "Motor Torque / Turbo", "Forward, reverse, turbo-forward, turbo-reverse values."),
@@ -49,6 +94,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     ];
 
     private VehicleConfigDocument? _vanillaDocument;
+    private ProgressionConfigDocument? _progressionDocument;
     private VehicleConfig? _selectedVanillaVehicle;
     private VehicleConfig? _currentVehicle;
     private ModFolderConfig? _selectedModFolder;
@@ -56,6 +102,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private string _currentFilePath = string.Empty;
     private string _statusMessage = "Select a vehicles.xml file to get started.";
     private string _modsRootPath = string.Empty;
+    private string _progressionFilePath = string.Empty;
+    private string _progressionStatusMessage = "Load progression.xml to edit level and attribute settings.";
+    private ProgressionAttributeConfig? _selectedProgressionAttribute;
+    private ProgressionSkillConfig? _selectedProgressionSkill;
+    private ProgressionCraftingSkillConfig? _selectedProgressionCraftingSkill;
+    private ProgressionPerkConfig? _selectedProgressionPerk;
     private string _multiplierText = "1.0";
     private bool _applyToSelectedVehicle = true;
     private bool _affectMotorTorque = true;
@@ -70,6 +122,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public ObservableCollection<EditableProperty> FuelProperties { get; } = [];
     public ObservableCollection<EditableProperty> ExtraProperties { get; } = [];
     public ObservableCollection<EditableProperty> AdvancedProperties { get; } = [];
+    public ObservableCollection<EditableProperty> ProgressionLevelProperties { get; } = [];
+    public ObservableCollection<EditableProperty> ProgressionAttributeDefaultsProperties { get; } = [];
+    public ObservableCollection<ProgressionAttributeConfig> ProgressionAttributes { get; } = [];
+    public ObservableCollection<EditableProperty> ProgressionSkillDefaultsProperties { get; } = [];
+    public ObservableCollection<ProgressionSkillConfig> ProgressionSkills { get; } = [];
+    public ObservableCollection<EditableProperty> ProgressionCraftingSkillDefaultsProperties { get; } = [];
+    public ObservableCollection<ProgressionCraftingSkillConfig> ProgressionCraftingSkills { get; } = [];
+    public ObservableCollection<EditableProperty> ProgressionPerkDefaultsProperties { get; } = [];
+    public ObservableCollection<ProgressionPerkConfig> ProgressionPerks { get; } = [];
+    public ObservableCollection<EditableProperty> SelectedProgressionAttributeProperties { get; } = [];
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -83,6 +145,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (!string.IsNullOrWhiteSpace(defaultVehiclesPath))
         {
             LoadVanillaFile(defaultVehiclesPath, updateStatus: false);
+        }
+
+        var defaultProgressionPath = DetectDefaultProgressionPath() ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(defaultProgressionPath))
+        {
+            LoadProgressionFile(defaultProgressionPath, updateStatus: false);
         }
 
         ScanModFolders(updateStatus: false);
@@ -127,6 +195,103 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             _statusMessage = value;
             OnPropertyChanged();
+        }
+    }
+
+    public string ProgressionFilePath
+    {
+        get => _progressionFilePath;
+        set
+        {
+            if (_progressionFilePath == value)
+            {
+                return;
+            }
+
+            _progressionFilePath = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasActiveProgressionFile));
+            OnPropertyChanged(nameof(CanRestoreProgressionBackup));
+        }
+    }
+
+    public string ProgressionStatusMessage
+    {
+        get => _progressionStatusMessage;
+        set
+        {
+            if (_progressionStatusMessage == value)
+            {
+                return;
+            }
+
+            _progressionStatusMessage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ProgressionAttributeConfig? SelectedProgressionAttribute
+    {
+        get => _selectedProgressionAttribute;
+        set
+        {
+            if (_selectedProgressionAttribute == value)
+            {
+                return;
+            }
+
+            _selectedProgressionAttribute = value;
+            RebuildSelectedProgressionAttributeProperties();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SelectedProgressionAttributeSummary));
+        }
+    }
+
+    public ProgressionSkillConfig? SelectedProgressionSkill
+    {
+        get => _selectedProgressionSkill;
+        set
+        {
+            if (_selectedProgressionSkill == value)
+            {
+                return;
+            }
+
+            _selectedProgressionSkill = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SelectedProgressionSkillSummary));
+        }
+    }
+
+    public ProgressionCraftingSkillConfig? SelectedProgressionCraftingSkill
+    {
+        get => _selectedProgressionCraftingSkill;
+        set
+        {
+            if (_selectedProgressionCraftingSkill == value)
+            {
+                return;
+            }
+
+            _selectedProgressionCraftingSkill = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SelectedProgressionCraftingSkillSummary));
+        }
+    }
+
+    public ProgressionPerkConfig? SelectedProgressionPerk
+    {
+        get => _selectedProgressionPerk;
+        set
+        {
+            if (_selectedProgressionPerk == value)
+            {
+                return;
+            }
+
+            _selectedProgressionPerk = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SelectedProgressionPerkSummary));
         }
     }
 
@@ -336,6 +501,30 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
+    public bool HasActiveProgressionFile => !string.IsNullOrWhiteSpace(_progressionDocument?.FilePath) && File.Exists(_progressionDocument.FilePath);
+
+    public bool CanRestoreProgressionBackup => HasActiveProgressionFile && File.Exists(GetBackupPath(_progressionDocument!.FilePath));
+
+    public string SelectedProgressionAttributeSummary =>
+        SelectedProgressionAttribute is null
+            ? "Select an attribute to view its top-level overrides and structural summary."
+            : $"{SelectedProgressionAttribute.Summary} Top-level overrides here are the safe first-pass edits; deeper rank requirements and effect groups remain read-only for now.";
+
+    public string SelectedProgressionSkillSummary =>
+        SelectedProgressionSkill is null
+            ? "Select a skill or book group to inspect its metadata."
+            : $"{SelectedProgressionSkill.Summary} This section is intentionally read-only so the app can expose skill metadata without implying these entries are safe balance edits.";
+
+    public string SelectedProgressionCraftingSkillSummary =>
+        SelectedProgressionCraftingSkill is null
+            ? "Select a crafting skill to inspect its structure."
+            : $"{SelectedProgressionCraftingSkill.Summary} Crafting skills stay read-only because unlock tiers, display entries, and passive effects are tightly coupled.";
+
+    public string SelectedProgressionPerkSummary =>
+        SelectedProgressionPerk is null
+            ? "Select a perk to inspect its progression structure."
+            : $"{SelectedProgressionPerk.Summary} Perks stay read-only because their requirements, effects, and descriptions are heavily interdependent.";
+
     private VehicleConfigDocument? ActiveDocument =>
         SelectedTabIndex == 0 ? _vanillaDocument : SelectedModVehicleNode?.Document ?? _selectedModFolder?.Document;
 
@@ -349,7 +538,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ? _vanillaDocument?.FilePath
             : SelectedModVehicleNode?.Document.FilePath ?? _selectedModFolder?.Document.FilePath;
 
-    private void BrowseFileClick(object sender, RoutedEventArgs e)
+    internal void BrowseFileClick(object sender, RoutedEventArgs e)
     {
         if (SelectedTabIndex == 1)
         {
@@ -371,7 +560,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private void ReloadFileClick(object sender, RoutedEventArgs e)
+    internal void BrowseProgressionFileClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Filter = "7 Days To Die progression config|progression.xml|XML files|*.xml|All files|*.*",
+            FileName = "progression.xml",
+            InitialDirectory = GetInitialProgressionDirectory()
+        };
+
+        if (dialog.ShowDialog(this) == true)
+        {
+            LoadProgressionFile(dialog.FileName, updateStatus: true);
+        }
+    }
+
+    internal void ReloadFileClick(object sender, RoutedEventArgs e)
     {
         if (SelectedTabIndex == 1)
         {
@@ -386,7 +590,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private void SaveFileClick(object sender, RoutedEventArgs e)
+    internal void ReloadProgressionFileClick(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(_progressionDocument?.FilePath))
+        {
+            LoadProgressionFile(_progressionDocument.FilePath, updateStatus: true);
+        }
+    }
+
+    internal void SaveFileClick(object sender, RoutedEventArgs e)
     {
         if (ActiveDocument is null || string.IsNullOrWhiteSpace(ActiveFilePath))
         {
@@ -408,7 +620,30 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private void CreateBackupClick(object sender, RoutedEventArgs e)
+    internal void SaveProgressionFileClick(object sender, RoutedEventArgs e)
+    {
+        if (_progressionDocument is null || string.IsNullOrWhiteSpace(_progressionDocument.FilePath))
+        {
+            MessageBox.Show(this, "Select a valid progression.xml file first.", "No File Selected", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        try
+        {
+            CreateBackupFile(_progressionDocument.FilePath);
+            _progressionDocument.Save(_progressionDocument.FilePath);
+            ProgressionStatusMessage = $"Saved changes and refreshed backup: {GetBackupPath(_progressionDocument.FilePath)}";
+            MessageBox.Show(this, "Progression changes saved successfully.", "Save Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            NotifyProgressionFileAvailabilityChanged();
+        }
+        catch (Exception ex)
+        {
+            ProgressionStatusMessage = $"Save failed: {ex.Message}";
+            MessageBox.Show(this, ex.Message, "Save Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    internal void CreateBackupClick(object sender, RoutedEventArgs e)
     {
         if (ActiveDocument is null || string.IsNullOrWhiteSpace(ActiveFilePath))
         {
@@ -429,7 +664,29 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private void RestoreBackupClick(object sender, RoutedEventArgs e)
+    internal void CreateProgressionBackupClick(object sender, RoutedEventArgs e)
+    {
+        if (_progressionDocument is null || string.IsNullOrWhiteSpace(_progressionDocument.FilePath))
+        {
+            MessageBox.Show(this, "Select a valid progression.xml file first.", "No File Selected", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        try
+        {
+            var backupPath = CreateBackupFile(_progressionDocument.FilePath);
+            ProgressionStatusMessage = $"Backup created: {backupPath}";
+            MessageBox.Show(this, $"Backup created:\n{backupPath}", "Backup Created", MessageBoxButton.OK, MessageBoxImage.Information);
+            NotifyProgressionFileAvailabilityChanged();
+        }
+        catch (Exception ex)
+        {
+            ProgressionStatusMessage = $"Backup failed: {ex.Message}";
+            MessageBox.Show(this, ex.Message, "Backup Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    internal void RestoreBackupClick(object sender, RoutedEventArgs e)
     {
         if (ActiveDocument is null || string.IsNullOrWhiteSpace(ActiveFilePath))
         {
@@ -481,7 +738,48 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private void ApplyPerformanceMultiplierClick(object sender, RoutedEventArgs e)
+    internal void RestoreProgressionBackupClick(object sender, RoutedEventArgs e)
+    {
+        if (_progressionDocument is null || string.IsNullOrWhiteSpace(_progressionDocument.FilePath))
+        {
+            MessageBox.Show(this, "Select a valid progression.xml file first.", "No File Selected", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var backupPath = GetBackupPath(_progressionDocument.FilePath);
+        if (!File.Exists(backupPath))
+        {
+            ProgressionStatusMessage = "No backup file was found next to the selected progression.xml.";
+            MessageBox.Show(this, "No backup file was found next to the selected progression.xml.", "Restore Backup", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var result = MessageBox.Show(
+            this,
+            $"Restore this backup?\n\n{backupPath}\n\nThis will overwrite the current progression.xml file.",
+            "Confirm Restore",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (result != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            File.Copy(backupPath, _progressionDocument.FilePath, overwrite: true);
+            LoadProgressionFile(_progressionDocument.FilePath, updateStatus: false);
+            ProgressionStatusMessage = $"Restored backup from {backupPath}";
+        }
+        catch (Exception ex)
+        {
+            ProgressionStatusMessage = $"Restore failed: {ex.Message}";
+            MessageBox.Show(this, ex.Message, "Restore Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    internal void ApplyPerformanceMultiplierClick(object sender, RoutedEventArgs e)
     {
         if (CurrentVehicle is null && ApplyToSelectedVehicle)
         {
@@ -538,7 +836,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         StatusMessage = $"Applied multiplier {multiplier} to {scopeText}. Updated {updatedValues} value(s).";
     }
 
-    private void ModTreeSelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    internal void ModTreeSelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
         switch (e.NewValue)
         {
@@ -557,7 +855,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private void ModTreePreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    internal void ModTreePreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         var source = e.OriginalSource as DependencyObject;
         var treeViewItem = FindAncestor<TreeViewItem>(source);
@@ -596,6 +894,134 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         catch (Exception ex)
         {
             StatusMessage = $"Load failed: {ex.Message}";
+            MessageBox.Show(this, ex.Message, "Load Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void LoadProgressionFile(string path, bool updateStatus)
+    {
+        try
+        {
+            _progressionDocument = ProgressionConfigDocument.Load(path);
+            ProgressionFilePath = path;
+
+            ProgressionLevelProperties.Clear();
+            foreach (var property in _progressionDocument.LevelProperties)
+            {
+                var definition = ProgressionLevelDefinitions.FirstOrDefault(item => item.Matches(property));
+                if (definition is not null)
+                {
+                    property.DisplayName = definition.DisplayName;
+                    property.Description = definition.Description;
+                }
+
+                ProgressionLevelProperties.Add(property);
+            }
+
+            ProgressionAttributeDefaultsProperties.Clear();
+            foreach (var property in _progressionDocument.AttributeDefaults)
+            {
+                var definition = ProgressionAttributeDefaultDefinitions.FirstOrDefault(item => item.Matches(property));
+                if (definition is not null)
+                {
+                    property.DisplayName = definition.DisplayName;
+                    property.Description = definition.Description;
+                }
+
+                ProgressionAttributeDefaultsProperties.Add(property);
+            }
+
+            ProgressionAttributes.Clear();
+            foreach (var attribute in _progressionDocument.Attributes)
+            {
+                foreach (var property in attribute.EditableProperties)
+                {
+                    var definition = ProgressionAttributeOverrideDefinitions.FirstOrDefault(item => item.Matches(property));
+                    if (definition is not null)
+                    {
+                        property.DisplayName = definition.DisplayName;
+                        property.Description = definition.Description;
+                    }
+                }
+
+                ProgressionAttributes.Add(attribute);
+            }
+
+            SelectedProgressionAttribute = ProgressionAttributes.FirstOrDefault();
+
+            ProgressionSkillDefaultsProperties.Clear();
+            foreach (var property in _progressionDocument.SkillDefaults)
+            {
+                var definition = ProgressionSkillDefaultDefinitions.FirstOrDefault(item => item.Matches(property));
+                if (definition is not null)
+                {
+                    property.DisplayName = definition.DisplayName;
+                    property.Description = definition.Description;
+                }
+
+                ProgressionSkillDefaultsProperties.Add(property);
+            }
+
+            ProgressionSkills.Clear();
+            foreach (var skill in _progressionDocument.Skills)
+            {
+                ProgressionSkills.Add(skill);
+            }
+
+            SelectedProgressionSkill = ProgressionSkills.FirstOrDefault();
+
+            ProgressionCraftingSkillDefaultsProperties.Clear();
+            foreach (var property in _progressionDocument.CraftingSkillDefaults)
+            {
+                var definition = ProgressionCraftingSkillDefaultDefinitions.FirstOrDefault(item => item.Matches(property));
+                if (definition is not null)
+                {
+                    property.DisplayName = definition.DisplayName;
+                    property.Description = definition.Description;
+                }
+
+                ProgressionCraftingSkillDefaultsProperties.Add(property);
+            }
+
+            ProgressionCraftingSkills.Clear();
+            foreach (var craftingSkill in _progressionDocument.CraftingSkills)
+            {
+                ProgressionCraftingSkills.Add(craftingSkill);
+            }
+
+            SelectedProgressionCraftingSkill = ProgressionCraftingSkills.FirstOrDefault();
+
+            ProgressionPerkDefaultsProperties.Clear();
+            foreach (var property in _progressionDocument.PerkDefaults)
+            {
+                var definition = ProgressionPerkDefaultDefinitions.FirstOrDefault(item => item.Matches(property));
+                if (definition is not null)
+                {
+                    property.DisplayName = definition.DisplayName;
+                    property.Description = definition.Description;
+                }
+
+                ProgressionPerkDefaultsProperties.Add(property);
+            }
+
+            ProgressionPerks.Clear();
+            foreach (var perk in _progressionDocument.Perks)
+            {
+                ProgressionPerks.Add(perk);
+            }
+
+            SelectedProgressionPerk = ProgressionPerks.FirstOrDefault();
+
+            if (updateStatus)
+            {
+                ProgressionStatusMessage = $"Loaded progression sections from {path}";
+            }
+
+            NotifyProgressionFileAvailabilityChanged();
+        }
+        catch (Exception ex)
+        {
+            ProgressionStatusMessage = $"Load failed: {ex.Message}";
             MessageBox.Show(this, ex.Message, "Load Failed", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -785,6 +1211,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         return File.Exists(vehiclesPath) ? vehiclesPath : null;
     }
 
+    private static string? DetectDefaultProgressionPath()
+    {
+        var gameDirectory = DetectGameDirectory();
+        if (string.IsNullOrWhiteSpace(gameDirectory))
+        {
+            return null;
+        }
+
+        var progressionPath = Path.Combine(gameDirectory, "Data", "Config", "progression.xml");
+        return File.Exists(progressionPath) ? progressionPath : null;
+    }
+
     private static string? DetectGameDirectory()
     {
         foreach (var candidate in EnumerateGameDirectoryCandidates())
@@ -826,12 +1264,49 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
     }
 
+    private string GetInitialProgressionDirectory()
+    {
+        if (!string.IsNullOrWhiteSpace(_progressionDocument?.FilePath))
+        {
+            return Path.GetDirectoryName(_progressionDocument.FilePath)!;
+        }
+
+        var defaultPath = DetectDefaultProgressionPath();
+        if (!string.IsNullOrWhiteSpace(defaultPath))
+        {
+            return Path.GetDirectoryName(defaultPath)!;
+        }
+
+        return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+    }
+
     private static string GetBackupPath(string filePath) => $"{filePath}.bak";
 
     private void NotifyFileAvailabilityChanged()
     {
         OnPropertyChanged(nameof(HasActiveFile));
         OnPropertyChanged(nameof(CanRestoreBackup));
+    }
+
+    private void NotifyProgressionFileAvailabilityChanged()
+    {
+        OnPropertyChanged(nameof(HasActiveProgressionFile));
+        OnPropertyChanged(nameof(CanRestoreProgressionBackup));
+    }
+
+    private void RebuildSelectedProgressionAttributeProperties()
+    {
+        SelectedProgressionAttributeProperties.Clear();
+
+        if (SelectedProgressionAttribute is null)
+        {
+            return;
+        }
+
+        foreach (var property in SelectedProgressionAttribute.EditableProperties)
+        {
+            SelectedProgressionAttributeProperties.Add(property);
+        }
     }
 
     private static string CreateBackupFile(string filePath)
